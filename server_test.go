@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net"
 	"testing"
 	"time"
@@ -19,22 +18,27 @@ func TestServer1(t *testing.T) {
 	time.Sleep(time.Millisecond * 2)
 	fmt.Println("trying to connect")
 	conn, _ := net.Dial("tcp", TEST_IP)
-	msg := []byte{1, 2, 0x15, 0x7D, 0x7E, 4}
-	fmt.Println("Sending:")
 
-	for _, v := range msg {
+	buf := bytes.NewBuffer([]byte{1, 2, 3, 4, 5})
+
+	fmt.Println("Sending:")
+	for _, v := range buf.Bytes() {
 		fmt.Printf("%3x", v)
 	}
 	fmt.Println()
-	msg = ConvertToNet(msg)
+	netw := NetWriter{conn}
 
-	r := io.TeeReader(bytes.NewReader(msg), conn)
-	io.ReadAll(r)
+	netw.ReadFrom(buf)
 
-	msg = []byte{1, 2, 3, 4, 5}
-	msg = ConvertToNet(msg)
-	r = io.TeeReader(bytes.NewReader(msg), conn)
-	io.ReadAll(r)
+	buf = bytes.NewBuffer([]byte{0x15, 0x7d, 0x7e})
+
+	fmt.Println("Sending:")
+	for _, v := range buf.Bytes() {
+		fmt.Printf("%3x", v)
+	}
+
+	fmt.Println()
+	netw.ReadFrom(buf)
 
 	time.Sleep(time.Second * 2)
 	conn.Close()

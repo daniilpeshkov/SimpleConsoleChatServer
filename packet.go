@@ -64,20 +64,56 @@ func (r NetReader) ReadByte() (byte, error) {
 	}
 }
 
-type NetConverter struct {
-	reader *io.Reader
-	writer *io.Writer
+type NetWriter struct {
+	w io.Writer
 }
 
-// func (nw NetConverter) ConvertAll() {
-// 	for {
-// 		b, err := nw.reader.Read()
-// 	}
-// }
+func (nw NetWriter) writeConvertedByte(b byte) error {
+	var err error
+	switch b {
+	case 0x7E:
+		_, err = nw.w.Write([]byte{0x7D, 0x5E})
+	case 0x7D:
+		_, err = nw.w.Write([]byte{0x7D, 0x5D})
+	case 0x15:
+		_, err = nw.w.Write([]byte{0x7D, 0x35})
+	default:
+		_, err = nw.w.Write([]byte{b})
+	}
+	return err
+}
 
-// func (w NetConverter) Write(b []byte) (int, error) {
+func (nw NetWriter) WriteByte(b byte) error {
+	_, err := nw.w.Write([]byte{b})
+	return err
+}
 
-// }
+func (nw NetWriter) ReadFrom(r io.Reader) (n int64, err error) {
+
+	buf := make([]byte, 128)
+	b_cnt := int64(0)
+	for {
+		l, readErr := r.Read(buf)
+		if l > 0 {
+			for i := 0; i < l; i++ {
+				err := nw.writeConvertedByte(buf[i])
+				if err != nil {
+					return b_cnt, err
+				}
+				b_cnt += 1
+			}
+		}
+		if readErr != nil {
+			err := nw.WriteByte(StopByte)
+			if err != nil {
+				return b_cnt, err
+			} else {
+				return b_cnt, nil
+			}
+		}
+	}
+
+}
 
 func ConvertToNet(bytes []byte) []byte {
 

@@ -15,7 +15,11 @@ func serveClient(client Client) {
 		buf.Reset()
 		_, err := buf.ReadFrom(nr)
 		if errors.Is(err, EOP{}) {
-			fmt.Printf("%v\n", buf.Bytes())
+			fmt.Println("Recieved:")
+			for _, v := range buf.Bytes() {
+				fmt.Printf("%3x", v)
+			}
+			fmt.Println()
 		} else {
 			fmt.Println("Connection closed")
 			break
