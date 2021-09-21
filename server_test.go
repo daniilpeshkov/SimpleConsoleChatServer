@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -16,28 +15,15 @@ func TestServer1(t *testing.T) {
 	go RunServer(TEST_PORT)
 	time.Sleep(time.Second * 1)
 	time.Sleep(time.Millisecond * 2)
-	fmt.Println("trying to connect")
 	conn, _ := net.Dial("tcp", TEST_IP)
 
-	buf := bytes.NewBuffer([]byte{1, 2, 3, 4, 5})
-
-	fmt.Println("Sending:")
-	for _, v := range buf.Bytes() {
-		fmt.Printf("%3x", v)
-	}
-	fmt.Println()
+	buf := bytes.NewBuffer([]byte("Чмоха\n\nсоси хуй"))
 	netw := NewNetIO(conn)
 
 	netw.ReadFrom(buf)
 
-	buf = bytes.NewBuffer([]byte{0x15, 0x7d, 0x7e})
+	buf = bytes.NewBuffer([]byte("Жуков - пидор"))
 
-	fmt.Println("Sending:")
-	for _, v := range buf.Bytes() {
-		fmt.Printf("%3x", v)
-	}
-
-	fmt.Println()
 	netw.ReadFrom(buf)
 
 	time.Sleep(time.Second * 2)

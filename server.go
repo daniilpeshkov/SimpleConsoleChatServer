@@ -7,16 +7,14 @@ import (
 	"net"
 )
 
-func serveClient(client *Client) {
+func serveClient(client *ClientConn) {
 	buf := bytes.NewBuffer(make([]byte, 0, 1000))
 	for {
 		buf.Reset()
 		_, err := buf.ReadFrom(client.NetIO)
 		if errors.Is(err, EOP{}) {
-			fmt.Println("Recieved:")
-			for _, v := range buf.Bytes() {
-				fmt.Printf("%3x", v)
-			}
+			fmt.Printf("[%s]: %s\n", client.name, string(buf.Bytes()))
+
 			client.NetIO.ReadFrom(buf)
 			fmt.Println()
 		} else {
@@ -43,8 +41,16 @@ func RunServer(port string) {
 				continue
 			}
 		}
-		fmt.Println("New Connection!")
-		client := NewClient(conn)
+
+		client := InitClientConn(conn)
+		buf := make([]byte, 100)
+
+		name_len, _ := client.NetIO.Read(buf)
+
+		client.name = string(buf[:name_len])
+
+		fmt.Printf("<%s joined>\n", client.name)
 		go serveClient(client)
+
 	}
 }
