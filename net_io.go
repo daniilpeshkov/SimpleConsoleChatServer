@@ -31,16 +31,18 @@ func NewNetIO(conn net.Conn) *NetIO {
 func (nw NetIO) WriteBytes(p []byte, SendEOP bool) (int, error) {
 	for i, b := range p {
 		var err error
+		var w_slice []byte
 		switch b {
 		case 0x7E:
-			_, err = nw.writer.Write([]byte{0x7D, 0x5E})
+			w_slice = []byte{0x7D, 0x5E}
 		case 0x7D:
-			_, err = nw.writer.Write([]byte{0x7D, 0x5D})
+			w_slice = []byte{0x7D, 0x5D}
 		case 0x15:
-			_, err = nw.writer.Write([]byte{0x7D, 0x35})
+			w_slice = []byte{0x7D, 0x35}
 		default:
-			_, err = nw.writer.Write([]byte{b})
+			w_slice = []byte{b}
 		}
+		_, err = nw.writer.Write(w_slice)
 		if err != nil {
 			return i, err
 		}
@@ -52,6 +54,7 @@ func (nw NetIO) WriteBytes(p []byte, SendEOP bool) (int, error) {
 	return len(p), err
 }
 
+//write bytes from reader (until EOF) into net
 func (nio NetIO) ReadFrom(r io.Reader) (n int64, err error) {
 	buf := make([]byte, 128)
 	w_len := int64(0)
@@ -74,6 +77,7 @@ func (nio NetIO) ReadFrom(r io.Reader) (n int64, err error) {
 	return w_len, nil
 }
 
+//read from net
 func (nio NetIO) Read(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil

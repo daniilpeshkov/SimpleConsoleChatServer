@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strconv"
 )
 
 func serveClient(client *Client) {
@@ -27,9 +26,9 @@ func serveClient(client *Client) {
 	}
 }
 
-func RunServer(port uint) {
+func RunServer(port string) {
 	fmt.Println("Launching server...")
-	ln, _ := net.Listen("tcp", ":"+strconv.Itoa(int(port)))
+	ln, _ := net.Listen("tcp", ":"+port)
 
 	for {
 

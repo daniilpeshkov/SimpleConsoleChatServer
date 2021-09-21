@@ -9,7 +9,7 @@ import (
 )
 
 const TEST_IP = "127.0.0.1:25565"
-const TEST_PORT = 25565
+const TEST_PORT = "25565"
 
 func TestServer1(t *testing.T) {
 
