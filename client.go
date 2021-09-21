@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"net"
 )
 
 type Client struct {
-	ReadWriter *bufio.ReadWriter
+	NetIO *NetIO
 }
 
-func NewClient(conn net.Conn) Client {
-	return Client{bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))}
+func NewClient(conn net.Conn) *Client {
+	return &Client{NewNetIO(conn)}
 }

@@ -26,7 +26,7 @@ func TestServer1(t *testing.T) {
 		fmt.Printf("%3x", v)
 	}
 	fmt.Println()
-	netw := NetWriter{conn}
+	netw := NewNetIO(conn)
 
 	netw.ReadFrom(buf)
 

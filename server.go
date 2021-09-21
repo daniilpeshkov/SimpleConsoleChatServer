@@ -8,17 +8,17 @@ import (
 	"strconv"
 )
 
-func serveClient(client Client) {
-	nr := NetReader{client.ReadWriter.Reader}
+func serveClient(client *Client) {
 	buf := bytes.NewBuffer(make([]byte, 0, 1000))
 	for {
 		buf.Reset()
-		_, err := buf.ReadFrom(nr)
+		_, err := buf.ReadFrom(client.NetIO)
 		if errors.Is(err, EOP{}) {
 			fmt.Println("Recieved:")
 			for _, v := range buf.Bytes() {
 				fmt.Printf("%3x", v)
 			}
+			client.NetIO.ReadFrom(buf)
 			fmt.Println()
 		} else {
 			fmt.Println("Connection closed")
