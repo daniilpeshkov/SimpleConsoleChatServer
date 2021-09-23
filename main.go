@@ -7,10 +7,9 @@ const (
 )
 
 func main() {
-
-	server, err := NewServer(PORT)
+	server := NewServer(PORT)
+	err := server.RunServer()
 	if err != nil {
-		fmt.Errorf("%s\n", err.Error())
+		fmt.Println(err.Error())
 	}
-
 }

@@ -59,7 +59,9 @@ func (nio NetIO) ReadFrom(r io.Reader) (n int64, err error) {
 	buf := make([]byte, 128)
 	w_len := int64(0)
 	sendEOP := false
-	for sendEOP == false {
+
+	for !sendEOP {
+
 		r_len, readErr := r.Read(buf)
 		var w_slice []byte
 		if r_len > 0 {
