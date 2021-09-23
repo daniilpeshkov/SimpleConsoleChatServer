@@ -1,6 +1,16 @@
 package main
 
+import "fmt"
+
+const (
+	PORT = "25565"
+)
+
 func main() {
 
-	RunServer("25565")
+	server, err := NewServer(PORT)
+	if err != nil {
+		fmt.Errorf("%s\n", err.Error())
+	}
+
 }

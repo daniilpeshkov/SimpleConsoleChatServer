@@ -1,56 +1,57 @@
 package main
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
 	"net"
+	"sync"
 )
 
-func serveClient(client *ClientConn) {
-	buf := bytes.NewBuffer(make([]byte, 0, 1000))
-	for {
-		buf.Reset()
-		_, err := buf.ReadFrom(client.NetIO)
-		if errors.Is(err, EOP{}) {
-			fmt.Printf("[%s]: %s\n", client.name, string(buf.Bytes()))
+const (
+	INITIAL_CLIENTS_SLICE_SIZE = 100
+)
 
-			client.NetIO.ReadFrom(buf)
-			fmt.Println()
-		} else {
-			fmt.Println("Connection closed")
-			break
-		}
-	}
+type Server struct {
+	ln net.Listener
+
+	clients     []*Client
+	clientsLock sync.Locker
 }
 
-func RunServer(port string) {
-	fmt.Println("Launching server...")
-	ln, _ := net.Listen("tcp", ":"+port)
+func NewServer(port string) (*Server, error) {
+	ln, err := net.Listen("tcp", ":"+port)
 
+	if err != nil {
+		return nil, err
+	}
+	server := new(Server)
+	server.ln = ln
+	server.clients = make([]*Client, INITIAL_CLIENTS_SLICE_SIZE)
+
+	server.clientsLock = &sync.Mutex{}
+
+	return server, nil
+}
+
+func (server *Server) serveClient(client *Client) {
+	//	buf := bytes.NewBuffer(make([]byte, 0, 1000))
+
+}
+
+func (server *Server) RunServer() {
 	for {
-
-		conn, err := ln.Accept()
-		var opError *net.OpError
+		conn, err := server.ln.Accept()
 
 		if err != nil {
-			if errors.As(err, &opError) {
-				fmt.Println(opError.Err.Error())
-			} else {
-				fmt.Println(err.Error())
-				continue
-			}
+			return
 		}
 
-		client := InitClientConn(conn)
-		buf := make([]byte, 100)
+		client := &Client{
+			netIO:    NewNetIO(conn),
+			LoggedIn: false,
+		}
 
-		name_len, _ := client.NetIO.Read(buf)
-
-		client.name = string(buf[:name_len])
-
-		fmt.Printf("<%s joined>\n", client.name)
-		go serveClient(client)
+		server.clientsLock.Lock()
+		server.clients = append(server.clients, client)
+		server.clientsLock.Unlock()
 
 	}
 }
