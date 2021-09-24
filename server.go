@@ -13,11 +13,8 @@ type Server struct {
 	ln   net.Listener
 	port string
 
-	// clients     []*Client
-	// clientsLock sync.Locker
-
-	clients       map[string]*Client
-	clientsRWlock sync.RWMutex
+	clients     map[string]*Client
+	clientsLock sync.Mutex
 }
 
 type loginErrCode int
@@ -29,12 +26,13 @@ const (
 
 //checks if a client with name exists. If not returns LOGIN_OK else returns LOGIN_ERR
 func (server *Server) loginClient(name string, client *Client) loginErrCode {
-	server.clientsRWlock.Lock()
-	defer server.clientsRWlock.Unlock()
+	server.clientsLock.Lock()
+	defer server.clientsLock.Unlock()
 
-	if _, ok := server.clients[name]; ok {
+	if _, nameExists := server.clients[name]; nameExists {
 		return LOGIN_ERR
 	}
+
 	server.clients[name] = client
 	return LOGIN_OK
 }
