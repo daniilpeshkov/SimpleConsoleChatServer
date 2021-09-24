@@ -9,13 +9,6 @@ const (
 	INITIAL_CLIENTS_RESERVED_SIZE = 100
 )
 
-type Client struct {
-	netIO *NetIO
-	name  string
-
-	loggedIn bool
-}
-
 type Server struct {
 	ln   net.Listener
 	port string
