@@ -1,14 +1,14 @@
 package main
 
-import "net"
+// import "net"
 
-type ClientConn struct {
-	conn net.Conn
-	name string
-}
+// type ClientConn struct {
+// 	conn net.Conn
+// 	name string
+// }
 
-func newClientConn(conn net.Conn) *ClientConn {
-	return &ClientConn{
-		conn: conn,
-	}
-}
+// func newClientConn(conn net.Conn) *ClientConn {
+// 	return &ClientConn{
+// 		conn: conn,
+// 	}
+// }
