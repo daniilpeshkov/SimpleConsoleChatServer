@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net"
+	"runtime"
 	"sync"
 )
 
@@ -13,7 +15,7 @@ type Server struct {
 	ln   net.Listener
 	port string
 
-	clients     map[string]*Client
+	clients     map[string]*ClientConn
 	clientsLock sync.Mutex
 }
 
@@ -25,7 +27,7 @@ const (
 )
 
 //checks if a client with name exists. If not returns LOGIN_OK else returns LOGIN_ERR
-func (server *Server) loginClient(name string, client *Client) loginErrCode {
+func (server *Server) loginClient(name string, clientConn *ClientConn) loginErrCode {
 	server.clientsLock.Lock()
 	defer server.clientsLock.Unlock()
 
@@ -33,13 +35,15 @@ func (server *Server) loginClient(name string, client *Client) loginErrCode {
 		return LOGIN_ERR
 	}
 
-	server.clients[name] = client
+	server.clients[name] = clientConn
+	server.clients[name].name = name
 	return LOGIN_OK
 }
 
 func NewServer(port string) *Server {
 	return &Server{
-		clients: make(map[string]*Client, INITIAL_CLIENTS_RESERVED_SIZE),
+		clients: make(map[string]*ClientConn, INITIAL_CLIENTS_RESERVED_SIZE),
+		port:    port,
 	}
 }
 
@@ -56,15 +60,31 @@ func (server *Server) RunServer() error {
 			return err
 		}
 
-		client := &Client{
-			netIO: NewNetIO(conn),
-		}
+		clientConn := newClientConn(conn)
 
-		go server.serveClient(client)
+		go server.serveClient(clientConn)
 	}
 }
 
-func (server *Server) serveClient(client *Client) {
-	//buf := bytes.NewBuffer(make([]byte, 0, 1000))
+func (server *Server) serveClient(clientConn *ClientConn) {
+	for {
+
+		msg, err := clientConn.RecieveMessage()
+		if err != nil {
+			return
+		}
+		res := server.loginClient(string(msg.fields[TypeName]), clientConn)
+		if res == LOGIN_ERR {
+			fmt.Println("refused login another " + string(msg.fields[TypeName]))
+			clientConn.conn.Close()
+			return
+		} else {
+			fmt.Println(clientConn.name + " logged in")
+			break
+		}
+	}
+	for {
+		runtime.Gosched()
+	}
 
 }

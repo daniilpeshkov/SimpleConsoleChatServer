@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"io"
-	"net"
 )
 
 const TypeMask = byte(0x1F)
@@ -12,22 +10,7 @@ const HeaderLen = 2
 const MaxDataLen = 255
 const MaxMessageLen = MaxDataLen + HeaderLen
 
-type EOP struct{} // reader reached packet delimiter (End Of Packet)
-
-func (err EOP) Error() string {
-	return "End of packet reached"
-}
-
-type NetIO struct {
-	w io.Writer
-	r *bufio.Reader
-}
-
-func NewNetIO(conn net.Conn) *NetIO {
-	return &NetIO{conn, bufio.NewReader(conn)}
-}
-
-func (nio NetIO) RecieveMessage() (*message, error) {
+func (cl_con ClientConn) RecieveMessage() (*message, error) {
 	msg := NewMessage()
 	header := [2]byte{}
 	hasNext := true
@@ -35,7 +18,7 @@ func (nio NetIO) RecieveMessage() (*message, error) {
 	var _type byte
 
 	for hasNext {
-		_, err := io.ReadFull(nio.r, header[:])
+		_, err := io.ReadFull(cl_con.conn, header[:])
 		if err != nil {
 			return nil, err
 		}
@@ -44,7 +27,7 @@ func (nio NetIO) RecieveMessage() (*message, error) {
 		dlc = uint(header[1])
 		_type = header[0] & TypeMask
 		buf := make([]byte, dlc)
-		_, err = io.ReadFull(nio.r, buf)
+		_, err = io.ReadFull(cl_con.conn, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +36,7 @@ func (nio NetIO) RecieveMessage() (*message, error) {
 	return msg, nil
 }
 
-func (nio NetIO) SendMessage(msg *message) error {
+func (cl_con ClientConn) SendMessage(msg *message) error {
 	fieldsLeft := len(msg.fields)
 	buf := [MaxMessageLen]byte{}
 	for k, v := range msg.fields {
@@ -79,7 +62,7 @@ func (nio NetIO) SendMessage(msg *message) error {
 			bLeft -= bytesToSend
 			fieldsLeft -= 1
 
-			_, err := nio.w.Write(buf[:HeaderLen+bytesToSend])
+			_, err := cl_con.conn.Write(buf[:HeaderLen+bytesToSend])
 			if err != nil {
 				return err
 			}
