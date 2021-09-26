@@ -16,22 +16,31 @@ func TestLoginClient(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 	login := func(name string) {
-		wg.Add(1)
 		conn, err := net.Dial("tcp", TEST_IP)
 		if err != nil {
 			t.Log(err.Error())
 		}
 		clientConn := simpleTcpMessage.NewClientConn(conn)
 		msg := simpleTcpMessage.NewMessage()
-		msg.AppendField(TypeName, []byte(name))
+		msg.AppendField(TypeSys, append([]byte{LoginCode}, []byte(name)...))
 		clientConn.SendMessage(msg)
+		msg, _ = clientConn.RecieveMessage()
+		t.Logf("Login response: %v\n", msg)
+
+		msg, _ = clientConn.RecieveMessage()
+		t.Logf("Message: %v\n", msg)
+
 		time.Sleep(time.Second * 3)
 		wg.Done()
 	}
+	wg.Add(2)
 	go login("User1")
 	go login("User2")
-	go login("User1")
 	server := NewServer(PORT)
 	go server.RunServer()
+	time.Sleep(time.Second * 2)
+	msg := simpleTcpMessage.NewMessage()
+	msg.AppendField(TypeText, []byte("Hello"))
+	server.msgChan <- msg
 	wg.Wait()
 }
