@@ -124,6 +124,8 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 		}
 		msg.RemoveFieldIfExist(TypeName)
 		msg.AppendField(TypeName, []byte(name))
+		text, _ := msg.GetField(TypeText)
+		fmt.Printf("%s sent: %s\n", name, string(text))
 		server.msgChan <- msg
 	}
 
