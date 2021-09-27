@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"runtime"
@@ -147,7 +146,7 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 		msg.AppendField(TagName, []byte(name))
 		text, _ := msg.GetField(TagText)
 
-		fmt.Printf("%s sent: %s\n", name, string(text))
+		log.Default().Printf("%s: user message [name= %s; message= %s ip= %s]\n", time.Now().Format(time.UnixDate), string(name), text, "NOT IMPLEMENTED")
 		server.msgChan <- msg
 	}
 
