@@ -22,7 +22,7 @@ func TestLoginClient(t *testing.T) {
 		}
 		clientConn := simpleTcpMessage.NewClientConn(conn)
 		msg := simpleTcpMessage.NewMessage()
-		msg.AppendField(TypeSys, append([]byte{LoginCode}, []byte(name)...))
+		msg.AppendField(TagSys, append([]byte{SysLoginRequest}, []byte(name)...))
 		clientConn.SendMessage(msg)
 		msg, _ = clientConn.RecieveMessage()
 		t.Logf("Login response: %v\n", msg)
@@ -40,7 +40,7 @@ func TestLoginClient(t *testing.T) {
 	go server.RunServer()
 	time.Sleep(time.Second * 2)
 	msg := simpleTcpMessage.NewMessage()
-	msg.AppendField(TypeText, []byte("Hello"))
+	msg.AppendField(TagText, []byte("Hello"))
 	server.msgChan <- msg
 	wg.Wait()
 }
