@@ -101,6 +101,7 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 
 		logCommand, ok := msg.GetField(TagSys)
 		nameBytes, nameOk := msg.GetField(TagName)
+
 		if !ok || !nameOk {
 			break
 		}
@@ -136,7 +137,7 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 
 		if err != nil {
 			log.Default().Printf("%s: user disconnected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(name), "NOT IMPLEMENTED")
-
+			log.Default().Printf("Online user count: %d\n", len(server.clients))
 			//tell others about disconneted user
 			msg = simpleTcpMessage.NewMessage()
 			msg.AppendField(TagSys, append([]byte{SysUserLoginNotiffication, USER_DISCONECTED}, []byte(name)...))
