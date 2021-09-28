@@ -100,13 +100,14 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 		}
 
 		logCommand, ok := msg.GetField(TagSys)
-		if !ok {
+		nameBytes, nameOk := msg.GetField(TagName)
+		if !ok || !nameOk {
 			break
 		}
 
-		if len(logCommand) >= MinSysLoginRequestSize && logCommand[0] == SysLoginRequest {
+		if len(logCommand) == 1 && logCommand[0] == SysLoginRequest {
 
-			name = string(logCommand[1:])
+			name = string(nameBytes)
 			loginRes := server.loginClient(name, clientConn)
 
 			//send response

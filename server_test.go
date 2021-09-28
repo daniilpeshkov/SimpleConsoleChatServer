@@ -33,9 +33,11 @@ func TestLoginClient(t *testing.T) {
 		time.Sleep(time.Second * 3)
 		wg.Done()
 	}
+
 	wg.Add(2)
 	go login("User1")
 	go login("User2")
+
 	server := NewServer(PORT)
 	go server.RunServer()
 	time.Sleep(time.Second * 2)
