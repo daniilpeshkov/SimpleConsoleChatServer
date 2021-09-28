@@ -63,6 +63,12 @@ func (server *Server) loginClient(name string, clientConn *simpleTcpMessage.Clie
 	return LOGIN_OK
 }
 
+func (server *Server) logoutClient(name string) {
+	server.clientsLock.Lock()
+	defer server.clientsLock.Unlock()
+	delete(server.clients, name)
+}
+
 func NewServer(port string) *Server {
 	return &Server{
 		clients: make(map[string]*simpleTcpMessage.ClientConn, INITIAL_CLIENTS_RESERVED_SIZE),
@@ -136,8 +142,10 @@ func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
 		msg, err := clientConn.RecieveMessage()
 
 		if err != nil {
+			server.logoutClient(name)
 			log.Default().Printf("%s: user disconnected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(name), "NOT IMPLEMENTED")
 			log.Default().Printf("Online user count: %d\n", len(server.clients))
+
 			//tell others about disconneted user
 			msg = simpleTcpMessage.NewMessage()
 			msg.AppendField(TagSys, append([]byte{SysUserLoginNotiffication, USER_DISCONECTED}, []byte(name)...))
