@@ -3,9 +3,7 @@ package main
 import (
 	"log"
 	"net"
-	"runtime"
 	"sync"
-	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 )
@@ -15,65 +13,70 @@ const (
 )
 
 const (
-	TagText     = 1
-	TagFileName = 2
-	TagFile     = 3
-	TagDate     = 4
-	TagName     = 5
-	TagSys      = 6
+	TagSys      = 1
+	TagMessage  = 2
+	TagFileName = 3
+	TagFile     = 4
+	TagTime     = 5
+	TagName     = 6
 )
 
 const (
-	SysLoginRequest        = 1
-	MinSysLoginRequestSize = 2
+	// request:  should contain TagName with name
+	// response: TagSys [SysLoginResponse, LoginStatus]
+	SysLoginRequest   = 1
+	LOGIN_OK          = 1
+	NAME_USED         = 2
+	NAME_WRONG_FORMAT = 3
 
-	SysLoginResponse = 2
-
+	//request: 	None
+	//response: TagSys [SysUserLoginNotiffication, type], TagName and TagTime
 	SysUserLoginNotiffication = 3
 	USER_CONNECTED            = 1
 	USER_DISCONECTED          = 2
-)
 
-const (
-	LOGIN_OK  = 1
-	NAME_USED = 2
+	//request: TagMessage TagText
+	//response to sender: TagSys [SysMessage, message status], TagTime
+	//response to others: TagSys [SysMessage], TagText, TagName, TagTime
+	SysMessage           = 4
+	MESSAGE_SENT         = 1
+	MESSAGE_WRONG_FORMAT = 2
 )
 
 type Server struct {
 	ln   net.Listener
 	port string
 
-	clients     map[string]*simpleTcpMessage.ClientConn
+	clients     []*Client
 	clientsLock sync.Mutex
 
-	msgChan chan *simpleTcpMessage.Message
+	usedNames     map[string]struct{}
+	usedNamesLock sync.Mutex
+	msgChan       chan AddressedMessage
+}
+
+type AddrType int
+
+var (
+	Broadcast = AddrType(1)
+	OnlyTo    = AddrType(2)
+	Except    = AddrType(3)
+)
+
+type AddressedMessage struct {
+	msg      *simpleTcpMessage.Message
+	client   *Client
+	addrType AddrType
 }
 
 type loginErrCode byte
 
-//checks if a client with name exists. If not returns LOGIN_OK else returns LOGIN_ERR
-func (server *Server) loginClient(name string, clientConn *simpleTcpMessage.ClientConn) loginErrCode {
-	server.clientsLock.Lock()
-	defer server.clientsLock.Unlock()
-
-	if _, nameExists := server.clients[name]; nameExists {
-		return NAME_USED
-	}
-	server.clients[name] = clientConn
-	return LOGIN_OK
-}
-
-func (server *Server) logoutClient(name string) {
-	server.clientsLock.Lock()
-	defer server.clientsLock.Unlock()
-	delete(server.clients, name)
-}
-
 func NewServer(port string) *Server {
 	return &Server{
-		clients: make(map[string]*simpleTcpMessage.ClientConn, INITIAL_CLIENTS_RESERVED_SIZE),
-		port:    port,
-		msgChan: make(chan *simpleTcpMessage.Message, 100),
+		clients:   make([]*Client, 0, INITIAL_CLIENTS_RESERVED_SIZE),
+		port:      port,
+		msgChan:   make(chan AddressedMessage, 100),
+		usedNames: make(map[string]struct{}),
 	}
 }
 
@@ -88,91 +91,30 @@ func (server *Server) RunServer() error {
 	for {
 		conn, err := server.ln.Accept()
 		if err != nil {
-			return err
+			log.Panicln(err.Error())
 		}
-
-		clientConn := simpleTcpMessage.NewClientConn(conn)
-
-		go server.serveClient(clientConn)
+		client := NewClient(conn)
+		server.clientsLock.Lock()
+		server.clients = append(server.clients, client)
+		server.clientsLock.Unlock()
+		go server.serveClient(client)
 	}
-}
-
-func (server *Server) serveClient(clientConn *simpleTcpMessage.ClientConn) {
-	var name string
-	for {
-		msg, err := clientConn.RecieveMessage()
-		if err != nil {
-			return
-		}
-
-		logCommand, ok := msg.GetField(TagSys)
-		nameBytes, nameOk := msg.GetField(TagName)
-
-		if !ok || !nameOk {
-			break
-		}
-
-		if len(logCommand) == 1 && logCommand[0] == SysLoginRequest {
-
-			name = string(nameBytes)
-			loginRes := server.loginClient(name, clientConn)
-
-			//send response
-			msg := simpleTcpMessage.NewMessage()
-			msg.AppendField(TagSys, []byte{SysLoginResponse, byte(loginRes)})
-			clientConn.SendMessage(msg)
-
-			if loginRes == NAME_USED {
-				log.Default().Printf("%s: login refused    [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(name), "NOT IMPLEMENTED")
-				continue
-			} else if loginRes == LOGIN_OK {
-				log.Default().Printf("%s: user connected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(name), "NOT IMPLEMENTED")
-
-				//tell others obout new user
-				msg = simpleTcpMessage.NewMessage()
-				msg.AppendField(TagSys, append([]byte{SysUserLoginNotiffication, USER_CONNECTED}, []byte(name)...))
-				server.msgChan <- msg
-
-				break
-			}
-		}
-
-	}
-	for {
-		msg, err := clientConn.RecieveMessage()
-
-		if err != nil {
-			server.logoutClient(name)
-			log.Default().Printf("%s: user disconnected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(name), "NOT IMPLEMENTED")
-			log.Default().Printf("Online user count: %d\n", len(server.clients))
-
-			//tell others about disconneted user
-			msg = simpleTcpMessage.NewMessage()
-			msg.AppendField(TagSys, append([]byte{SysUserLoginNotiffication, USER_DISCONECTED}, []byte(name)...))
-			server.msgChan <- msg
-			break
-		}
-		msg.RemoveFieldIfExist(TagName)
-		msg.AppendField(TagName, []byte(name))
-		text, _ := msg.GetField(TagText)
-
-		log.Default().Printf("%s: user message [name= %s; message= %s ip= %s]\n", time.Now().Format(time.UnixDate), string(name), text, "NOT IMPLEMENTED")
-		server.msgChan <- msg
-	}
-
 }
 
 func (server *Server) msgSendGorutine() {
 	for {
-		select {
-		case msg := <-server.msgChan:
+		addrMsg := <-server.msgChan
+
+		if addrMsg.addrType == OnlyTo {
+			addrMsg.client.io.SendMessage(addrMsg.msg)
+		} else {
 			server.clientsLock.Lock()
 			for _, v := range server.clients {
-				v.SendMessage(msg)
+				if v.logined && (addrMsg.addrType == Broadcast || (v != addrMsg.client)) {
+					v.io.SendMessage(addrMsg.msg)
+				}
 			}
 			server.clientsLock.Unlock()
-		default:
-			runtime.Gosched()
 		}
 	}
 }
