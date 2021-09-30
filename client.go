@@ -27,7 +27,6 @@ func NewClient(conn net.Conn) *Client {
 func (server *Server) serveClient(client *Client) {
 	for {
 		msg, err := client.io.RecieveMessage()
-
 		if client.logined {
 			if err != nil { // if error when loggined
 				server.logoutClient(client)
@@ -66,7 +65,7 @@ func (server *Server) serveClient(client *Client) {
 
 				msg := simpleTcpMessage.NewMessage()
 				msg.AppendField(TagSys, []byte{SysLoginRequest, byte(loginRes)})
-				client.io.SendMessage(msg)
+				server.msgChan <- AddressedMessage{msg, client, OnlyTo}
 
 				if loginRes == NAME_USED || loginRes == NAME_WRONG_FORMAT {
 					log.Default().Printf("%s: login refused    [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(client.name), "NOT IMPLEMENTED")
@@ -78,9 +77,7 @@ func (server *Server) serveClient(client *Client) {
 					msg = simpleTcpMessage.NewMessage()
 					msg.AppendField(TagSys, []byte{SysUserLoginNotiffication, USER_CONNECTED})
 					msg.AppendField(TagName, []byte(client.name))
-					server.msgChan <- AddressedMessage{msg, nil, Broadcast}
-
-					break
+					server.msgChan <- AddressedMessage{msg, client, Except}
 				}
 			}
 		}
