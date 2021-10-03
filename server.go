@@ -42,6 +42,11 @@ const (
 	SysMessage           = 4
 	MESSAGE_SENT         = 1
 	MESSAGE_WRONG_FORMAT = 2
+
+	//request TagFile TagFileName
+	SysFile   = 5
+	FILE_SENT = 1
+	ERR       = 2
 )
 
 type Server struct {

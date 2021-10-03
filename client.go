@@ -30,7 +30,8 @@ func (server *Server) serveClient(client *Client) {
 	for {
 		msg, err := client.io.RecieveMessage()
 		if client.logined {
-			if err != nil { // if error when loggined
+			switch {
+			case err != nil: // if error when loggined
 				server.logoutClient(client)
 				logger.Printf("user disconnected [%s]\n", string(client.name))
 				//tell others about disconneted user
@@ -38,13 +39,11 @@ func (server *Server) serveClient(client *Client) {
 				msg.AppendField(TagSys, []byte{SysUserLoginNotiffication, USER_DISCONECTED})
 				msg.AppendField(TagName, []byte(client.name))
 				server.msgChan <- AddressedMessage{msg, nil, Broadcast}
-				break
-			}
-			if isMessageRequest(msg) {
+				return
 
+			case isTextMessage(msg):
 				rspMsg := simpleTcpMessage.NewMessage()
 				rspMsg.AppendField(TagSys, []byte{SysMessage, MESSAGE_SENT})
-				//todo time
 				server.msgChan <- AddressedMessage{rspMsg, client, OnlyTo}
 
 				msg.RemoveFieldIfExist(TagName)
@@ -53,6 +52,7 @@ func (server *Server) serveClient(client *Client) {
 				logger.Printf("[message] %s:  %s\n", string(client.name), text)
 
 				server.msgChan <- AddressedMessage{msg, client, Except}
+
 			}
 		} else {
 			if err != nil {
