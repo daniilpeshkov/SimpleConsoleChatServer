@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 )
@@ -104,6 +105,9 @@ func (server *Server) RunServer() error {
 func (server *Server) msgSendGorutine() {
 	for {
 		addrMsg := <-server.msgChan
+		timeNow := time.Now()
+		timeB, _ := timeNow.MarshalBinary()
+		addrMsg.msg.AppendField(TagTime, timeB)
 
 		if addrMsg.addrType == OnlyTo {
 			addrMsg.client.io.SendMessage(addrMsg.msg)

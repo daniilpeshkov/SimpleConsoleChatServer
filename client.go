@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net"
-	"time"
+	"os"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 )
@@ -24,15 +24,15 @@ func NewClient(conn net.Conn) *Client {
 	}
 }
 
+var logger = log.New(os.Stdout, "", log.Ltime|log.Ldate)
+
 func (server *Server) serveClient(client *Client) {
 	for {
 		msg, err := client.io.RecieveMessage()
 		if client.logined {
 			if err != nil { // if error when loggined
 				server.logoutClient(client)
-				log.Default().Printf("%s: user disconnected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(client.name), "NOT IMPLEMENTED")
-				log.Default().Printf("Online user count: %d\n", len(server.clients))
-
+				logger.Printf("user disconnected [%s]\n", string(client.name))
 				//tell others about disconneted user
 				msg = simpleTcpMessage.NewMessage()
 				msg.AppendField(TagSys, []byte{SysUserLoginNotiffication, USER_DISCONECTED})
@@ -50,7 +50,7 @@ func (server *Server) serveClient(client *Client) {
 				msg.RemoveFieldIfExist(TagName)
 				msg.AppendField(TagName, []byte(client.name))
 				text, _ := msg.GetField(TagMessage)
-				log.Default().Printf("%s: user message [name= %s; message= %s ip= %s]\n", time.Now().Format(time.UnixDate), string(client.name), text, "NOT IMPLEMENTED")
+				logger.Printf("[message] %s:  %s\n", string(client.name), text)
 
 				server.msgChan <- AddressedMessage{msg, client, Except}
 			}
@@ -68,10 +68,10 @@ func (server *Server) serveClient(client *Client) {
 				server.msgChan <- AddressedMessage{msg, client, OnlyTo}
 
 				if loginRes == NAME_USED || loginRes == NAME_WRONG_FORMAT {
-					log.Default().Printf("%s: login refused    [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(client.name), "NOT IMPLEMENTED")
+					logger.Printf("login refused [%s]\n", string(client.name))
 					continue
 				} else if loginRes == LOGIN_OK {
-					log.Default().Printf("%s: user connected [name= %s; ip= %s]\n", time.Now().Format(time.UnixDate), string(client.name), "NOT IMPLEMENTED")
+					logger.Printf("user connected [%s]\n", string(client.name))
 
 					//tell others obout new user
 					msg = simpleTcpMessage.NewMessage()

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -44,6 +43,5 @@ func (server *Server) logoutClient(client *Client) {
 			break
 		}
 	}
-	fmt.Printf("after disconnect %d\n", len(server.clients))
 	delete(server.usedNames, client.name)
 }
