@@ -52,7 +52,17 @@ func (server *Server) serveClient(client *Client) {
 				logger.Printf("[message] %s:  %s\n", string(client.name), text)
 
 				server.msgChan <- AddressedMessage{msg, client, Except}
+			case isFileMessage(msg):
+				rspMsg := simpleTcpMessage.NewMessage()
+				rspMsg.AppendField(TagSys, []byte{SysMessage, FILE_SENT})
+				server.msgChan <- AddressedMessage{rspMsg, client, OnlyTo}
 
+				msg.RemoveFieldIfExist(TagName)
+				msg.AppendField(TagName, []byte(client.name))
+				text, _ := msg.GetField(TagMessage)
+				logger.Printf("[file] %s:  %s\n", string(client.name), text)
+
+				server.msgChan <- AddressedMessage{msg, client, Except}
 			}
 		} else {
 			if err != nil {
