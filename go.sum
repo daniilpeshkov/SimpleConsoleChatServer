@@ -1,2 +1,4 @@
 github.com/daniilpeshkov/go-simple-tcp-message v1.0.2 h1:NIoQ4ylnt8rR1PuJW9FijlEugWn0fsg2jbLg/Vy1Zek=
 github.com/daniilpeshkov/go-simple-tcp-message v1.0.2/go.mod h1:Qc3crUWWLUsG7b5qbNuU5yvSnt/lMzhEH5JY73Q9cxo=
+github.com/daniilpeshkov/go-simple-tcp-message v1.1.0 h1:51na9r8BuVAbPDBnX4VGQM8/23WuCN48vRP/13pMGvU=
+github.com/daniilpeshkov/go-simple-tcp-message v1.1.0/go.mod h1:Qc3crUWWLUsG7b5qbNuU5yvSnt/lMzhEH5JY73Q9cxo=

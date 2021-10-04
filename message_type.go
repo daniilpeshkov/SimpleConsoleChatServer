@@ -19,6 +19,7 @@ func isFileMessage(msg *simpleTcpMessage.Message) bool {
 	sysBytes, sysOk := msg.GetField(TagSys)
 	fileNameBytes, fileNameOk := msg.GetField(TagFileName)
 	fileContentBytes, fileContentOk := msg.GetField(TagFile)
+	logger.Printf("TagSys: %d TagFileName: %d TagFileContent: %d\n", len(sysBytes), len(fileNameBytes), len(fileContentBytes))
 
 	return sysOk && fileNameOk && fileContentOk &&
 		len(sysBytes) == 1 && sysBytes[0] == SysFile &&

@@ -19,7 +19,7 @@ func NewClient(conn net.Conn) *Client {
 	return &Client{
 		io:      simpleTcpMessage.NewClientConn(conn),
 		logined: false,
-		ipAddr:  "",
+		ipAddr:  conn.RemoteAddr().String(),
 		name:    "",
 	}
 }
@@ -53,13 +53,15 @@ func (server *Server) serveClient(client *Client) {
 
 				server.msgChan <- AddressedMessage{msg, client, Except}
 			case isFileMessage(msg):
+				logger.Printf("file recieved\n")
 				rspMsg := simpleTcpMessage.NewMessage()
+				//confirm file recieve
 				rspMsg.AppendField(TagSys, []byte{SysMessage, FILE_SENT})
 				server.msgChan <- AddressedMessage{rspMsg, client, OnlyTo}
 
 				msg.RemoveFieldIfExist(TagName)
 				msg.AppendField(TagName, []byte(client.name))
-				text, _ := msg.GetField(TagMessage)
+				text, _ := msg.GetField(TagFileName)
 				logger.Printf("[file] %s:  %s\n", string(client.name), text)
 
 				server.msgChan <- AddressedMessage{msg, client, Except}
