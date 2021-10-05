@@ -56,7 +56,7 @@ func (server *Server) serveClient(client *Client) {
 				logger.Printf("file recieved\n")
 				rspMsg := simpleTcpMessage.NewMessage()
 				//confirm file recieve
-				rspMsg.AppendField(TagSys, []byte{SysMessage, FILE_SENT})
+				rspMsg.AppendField(TagSys, []byte{SysFile, FILE_SENT})
 				server.msgChan <- AddressedMessage{rspMsg, client, OnlyTo}
 
 				msg.RemoveFieldIfExist(TagName)
