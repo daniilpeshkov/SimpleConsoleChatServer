@@ -116,6 +116,7 @@ func (server *Server) msgSendGorutine() {
 		addrMsg := <-server.msgChan
 		timeNow := time.Now()
 		timeB, _ := timeNow.MarshalBinary()
+		addrMsg.msg.RemoveFieldIfExist(TagTime)
 		addrMsg.msg.AppendField(TagTime, timeB)
 
 		if addrMsg.addrType == OnlyTo {
